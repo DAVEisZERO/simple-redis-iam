@@ -1,0 +1,43 @@
+import redis
+import json
+from app.schemas.user import User
+
+r = redis.Redis(
+    host='localhost', 
+    port=6379, 
+    decode_responses=True
+)
+
+def find_in_redis(type: str, username: str) -> bool:
+    return r.exists(f"{type}:{username}") == 1
+
+def store_in_redis(user: User):
+    r.set(f"user:{user.email}", user.model_dump_json())
+
+def get_from_redis(username: str):
+    json_data = r.get(f"user:{username}")
+    if json_data is None:
+        return None
+    return json.loads(json_data)
+
+def remove_from_redis(username: str, token: str) -> int:
+    r.delete(f"session:{token}")
+    return r.delete(f"user:{username}")
+
+# #### TODO redis.conf
+
+
+### SESSIONS Approach ###
+def store_session_redis(username: str, token: str):
+    r.set(f"session:{token}", username)
+
+def get_session_redis(token: str):
+    result = r.get(f"session:{token}")
+    if result != None:
+        return result
+    return False
+
+#### SECURE ####
+
+def check_user_in_redis(username: str) -> bool:
+    return r.exists(f"user:{username}") == 1
