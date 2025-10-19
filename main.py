@@ -1,7 +1,9 @@
 from typing import Union, Annotated
+import ssl
 
 from fastapi import  Depends, FastAPI,  HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.schemas.user import User
@@ -17,7 +19,7 @@ origins = [
 
 app = FastAPI()
 
-
+# Arrange CORS settings
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -25,6 +27,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Configure HTTPS 
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+ssl_context.load_cert_chain(certfile='./ssl_certs/cert.pem', keyfile='./ssl_certs/key.pem')
+
 
 app.include_router(auth.router, prefix="/api/v1/auth")
 
@@ -53,6 +60,12 @@ def delete_user(user_mail: str):
         return {"status": user_mail + " deleted"}
     else:
         return {"status": user_mail + " not found"}
+    
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello, HTTPS world!"}
+
 
 
 ### SECURE ###
@@ -71,3 +84,5 @@ def delete_user(user_mail: str, token: Annotated[str, Depends(OAUTH2_SCHEME)]):
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+# if __name__ == "__main__":
+#     uvicorn.run("main:app", host="0.0.0.0", port=8000, ssl_certfile='./ssl_certs/cert.pem', ssl_keyfile='./ssl_certs/key.pem')

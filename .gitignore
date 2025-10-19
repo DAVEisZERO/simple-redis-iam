@@ -1,3 +1,6 @@
+# Packages
+ssl_certs
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
