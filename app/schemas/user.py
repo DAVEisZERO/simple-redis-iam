@@ -29,3 +29,7 @@ class UserSession(BaseModel):
     expires_at: Optional[int] = None
     token_type: str
     user: AuthUser
+
+class SecuritySettings(BaseModel):
+    otp_configured: bool
+    secret: str
