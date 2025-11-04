@@ -1,0 +1,11 @@
+Set Google SMTP server
+
+setting SMTL client: https://mailtrap.io/blog/smtplib/#Send-email-using-smtplib-and-SMTP 
+google setup: https://support.google.com/accounts/answer/185833?hl=en 
+example code: https://github.com/abhinandan2540/My-PyNakama/blob/main/SendMail/README.md
+
+SEtting up HTTPS in FastAPI
+
+unicorn docus: https://uvicorn.dev/deployment/#running-with-https
+creating local trusted CA: https://github.com/FiloSottile/mkcert 
+creating global trusted CA: https://letsencrypt.org/getting-started/ 
