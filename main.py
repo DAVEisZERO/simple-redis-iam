@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.schemas.user import User
 from app.routers import auth
-from app.services.redis_service import store_in_redis, get_from_redis, remove_from_redis, get_session_redis, store_session_redis, find_in_redis
+from app.services.redis_service import store_in_redis, get_from_redis, remove_from_redis, get_session_redis, store_session_redis, find_in_redis, change_username_redis
 from app.services.oauth2_opaque_token import OAUTH2_SCHEME, generate_opaque_token
 
 origins = [
@@ -29,8 +29,8 @@ app.add_middleware(
 )
 
 # Configure HTTPS 
-ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_context.load_cert_chain(certfile='./ssl_certs/cert.pem', keyfile='./ssl_certs/key.pem')
+# ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+# ssl_context.load_cert_chain(certfile='./ssl_certs/cert.pem', keyfile='./ssl_certs/key.pem')
 
 
 app.include_router(auth.router, prefix="/api/v1/auth")
@@ -49,9 +49,24 @@ def read_root(token: Annotated[str, Depends(OAUTH2_SCHEME)]):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-@app.get("/api/v1/users/{user_mail}")
-def read_user(user_mail: str, q: Union[str, None] = None):
-    return {"user_name": get_from_redis(username=user_mail)}
+@app.post("/api/v1/changeName/")
+def change_user_name(user: User, token: Annotated[str, Depends(OAUTH2_SCHEME)]):
+    result = get_session_redis(token)
+    print("result:", result)
+
+    if result != None:
+        change_username_redis(email=result, new_username=user.name)
+    else:                      
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return get_from_redis(username=result)
+
+# @app.get("/api/v1/users/{user_mail}")
+# def read_user(user_mail: str, q: Union[str, None] = None):
+#     return {"user_name": get_from_redis(username=user_mail)}
 
 
 @app.put("/api/v1/users/remove/V2/{user_mail}")
@@ -84,5 +99,5 @@ def delete_user(user_mail: str, token: Annotated[str, Depends(OAUTH2_SCHEME)]):
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-# if __name__ == "__main__":
-#     uvicorn.run("main:app", host="0.0.0.0", port=8000, ssl_certfile='./ssl_certs/cert.pem', ssl_keyfile='./ssl_certs/key.pem')
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, ssl_certfile='./ssl_certs/example.com+5.pem', ssl_keyfile="./ssl_certs/./example.com+5-key.pem")

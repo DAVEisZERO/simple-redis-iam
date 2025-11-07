@@ -22,13 +22,13 @@ subject = "Test Email from Python"
 # <p><a href="{{ .ConfirmationURL }}">Confirm your mail</a></p>"""
 
 
-def send_mail(html_body: str):
+def send_mail(html_body: str, receiver_email: str = receiver_email, subject: str = subject):
     try:
         # Create the email
         msg = MIMEMultipart()
         msg["Form"] = sender_email
         msg["To"] = receiver_email
-        msg["Subject"] = "python email testing"
+        msg["Subject"] = subject
         msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
         # Send the email
@@ -36,6 +36,7 @@ def send_mail(html_body: str):
             server.starttls()  # Secure connection
             server.login(USERNAME, PASSWORD)
             server.sendmail(sender_email, receiver_email, msg.as_string())
+        return True
     except Exception as e:
         print(f"error : {e}")
 

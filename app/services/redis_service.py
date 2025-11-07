@@ -37,7 +37,28 @@ def get_session_redis(token: str):
         return result
     return False
 
+### CHANGE USER NAME ###
+def change_username_redis(email: str, new_username: str):
+    user_data = get_from_redis(email)
+    if user_data is None:
+        return False
+    # Update username
+    user_data['name'] = new_username
+    # Store updated data under new username key
+    r.set(f"user:{email}", json.dumps(user_data))
+    return True
+
 #### SECURE ####
 
 def check_user_in_redis(username: str) -> bool:
     return r.exists(f"user:{username}") == 1
+
+### otp secret storage ### TODO: expiration time REDIs OBJECT with TTL
+def store_otp_secret(id: str, secret_object: str):
+    r.set(f"otp_secret:{id}", secret_object)
+
+def get_otp_secret(id: str) -> any:
+    json_data = r.get(f"otp_secret:{id}")
+    if json_data is None:
+        return None
+    return json.loads(json_data)

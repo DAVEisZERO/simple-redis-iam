@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 
 class User(BaseModel):
     name: str
@@ -33,3 +34,9 @@ class UserSession(BaseModel):
 class SecuritySettings(BaseModel):
     otp_configured: bool
     secret: str
+
+
+class OTPData(BaseModel):
+    email: str
+    code: str
+    expires_at: datetime
