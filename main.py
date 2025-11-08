@@ -6,9 +6,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.schemas.user import User
+from app.schemas.user import User, AuthUser, UserSession
 from app.routers import auth
-from app.services.redis_service import store_in_redis, get_from_redis, remove_from_redis, get_session_redis, store_session_redis, find_in_redis, change_username_redis
+from app.services.redis_service import store_in_redis, get_from_redis, remove_from_redis, get_session_redis, store_session_redis, find_in_redis, change_username_redis, change_password_redis
 from app.services.oauth2_opaque_token import OAUTH2_SCHEME, generate_opaque_token
 
 origins = [
@@ -50,23 +50,49 @@ def read_root(token: Annotated[str, Depends(OAUTH2_SCHEME)]):
         )
 
 @app.post("/api/v1/changeName/")
-def change_user_name(user: User, token: Annotated[str, Depends(OAUTH2_SCHEME)]):
-    result = get_session_redis(token)
-    print("result:", result)
+def change_user_name(user: AuthUser, token: Annotated[str, Depends(OAUTH2_SCHEME)]):
+    user_email = get_session_redis(token)
+    #print("result:", user_email)
 
-    if result != None:
-        change_username_redis(email=result, new_username=user.name)
+    if user_email != None:
+        change_username_redis(email=user_email, new_username=user.name)
     else:                      
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return get_from_redis(username=result)
+    
+    new_user = User(**get_from_redis(username=user_email))
+    authuser = AuthUser(id=new_user.id , email=new_user.email, name=new_user.name)
 
-# @app.get("/api/v1/users/{user_mail}")
-# def read_user(user_mail: str, q: Union[str, None] = None):
-#     return {"user_name": get_from_redis(username=user_mail)}
+    return UserSession(
+        access_token=token,
+        token_type="bearer",
+        user=authuser
+    )
+
+@app.post("/api/v1/changePassword/")
+def change_user_password(user: User, token: Annotated[str, Depends(OAUTH2_SCHEME)]):
+    user_email = get_session_redis(token)
+    #print("result:", user_email)
+
+    if user_email != None:
+        change_password_redis(email=user_email, new_psswrd=user.password)
+    else:                      
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    new_user = User(**get_from_redis(username=user_email))
+    authuser = AuthUser(id=new_user.id , email=new_user.email, name=new_user.name)
+
+    return UserSession(
+        access_token=token,
+        token_type="bearer",
+        user=authuser
+    )
 
 
 @app.put("/api/v1/users/remove/V2/{user_mail}")
@@ -85,13 +111,13 @@ def read_root():
 
 ### SECURE ###
 
-@app.put("/api/v1/users/remove/{user_mail}")
-def delete_user(user_mail: str, token: Annotated[str, Depends(OAUTH2_SCHEME)]):
+@app.post("/api/v1/users/remove/")
+def delete_user(user: AuthUser, token: Annotated[str, Depends(OAUTH2_SCHEME)]):
     result = get_session_redis(token)
     
     if result != None:
-        remove_from_redis(username=user_mail)
-        return {"status": user_mail + " deleted"}
+        remove_from_redis(username=user.email, token=token)
+        return {"status": user.email + " deleted"}
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

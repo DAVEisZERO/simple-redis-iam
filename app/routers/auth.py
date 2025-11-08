@@ -28,7 +28,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         else:
             token = generate_opaque_token(user.get("password"))
             store_session_redis(form_data.username, token)
-            ##TODO: Multiple session tokens can be created for the same user (signup + login problem)
+            ##TODO: Multiple session tokens can be created for the same user (signup + login problem) --> not secure, too much token
     
     return UserSession(
         access_token=token,
@@ -41,12 +41,14 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 def store_user(user: User):
     if find_in_redis("user", user.email):
         raise HTTPException(status_code=400, detail="User already exists")
+    
+    user.id = create_user_id()
     store_in_redis(user)
 
     # Generate token and store session
     token = generate_opaque_token(user.password)
     store_session_redis(user.email, token)
-    authuser = AuthUser(id=create_user_id() , email=user.email, name=user.name)
+    authuser = AuthUser(id=user.id , email=user.email, name=user.name)
 
     return UserSession(
         access_token=token,

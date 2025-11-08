@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class User(BaseModel):
+    id: Optional[str] = None
     name: str
     email: str
     password: str
@@ -15,7 +16,7 @@ class Token(BaseModel):
 
 class AuthUser(BaseModel):
     # Define fields for AuthUser based on your requirements
-    id: int
+    id: str
     email: str
     name: Optional[str] = None
     list: Optional[str] = None

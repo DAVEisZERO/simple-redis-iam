@@ -11,3 +11,5 @@ Local storage vs session storage vs cookies https://medium.com/@mschoudhary81/ho
 token: opaque token vs JWT token
 
 sign-up with and without authentification (email)   
+
+SEttings and KeyVault storage for credentials (keys, passwords)
