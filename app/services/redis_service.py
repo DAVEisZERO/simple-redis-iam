@@ -2,7 +2,7 @@ import redis
 import json
 from app.schemas.user import User
 
-r = redis.Redis(
+r = redis.Redis( # speakes RESP (REdis Serialization Protocol)
     host='localhost', 
     port=6379, 
     decode_responses=True

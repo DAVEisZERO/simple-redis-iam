@@ -14,7 +14,10 @@ def test_change_username_redis():
 
 def test_get_user_from_redis():
     #object = get_from_redis("pedrobeer@gmail.com")
-    new_user = User(**get_from_redis("leabeer@gmail.com"))
+    new_user = User(**get_from_redis("davebeer.dh@gmail.com"))
     print(new_user.name)
     #print(object)
     #assert object is not None
+
+# def teste_redis_health():
+#     # requests.get(url)

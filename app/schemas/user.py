@@ -41,3 +41,7 @@ class OTPData(BaseModel):
     email: str
     code: str
     expires_at: datetime
+
+
+class EmailRequest(BaseModel):
+    email: str
