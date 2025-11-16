@@ -9,3 +9,12 @@ SEtting up HTTPS in FastAPI
 unicorn docus: https://uvicorn.dev/deployment/#running-with-https
 creating local trusted CA: https://github.com/FiloSottile/mkcert 
 creating global trusted CA: https://letsencrypt.org/getting-started/ 
+
+set TMDB account and API Key
+    Type A: Public / Publishable Keys
+    These are keys that are safe to be seen.
+    https://www.themoviedb.org/settings/api/request
+
+    1. create acocunt
+    2. createa key by configuring it to your account and applicaiton URL 
+    here to store: src/environments/environment.ts.

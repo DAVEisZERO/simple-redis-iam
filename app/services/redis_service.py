@@ -1,5 +1,6 @@
 import redis
 import json
+from typing import Optional
 from app.schemas.user import User
 
 r = redis.Redis( # speakes RESP (REdis Serialization Protocol)
@@ -11,8 +12,9 @@ r = redis.Redis( # speakes RESP (REdis Serialization Protocol)
 def find_in_redis(type: str, username: str) -> bool:
     return r.exists(f"{type}:{username}") == 1
 
-def store_in_redis(user: User):
-    r.set(f"user:{user.email}", user.model_dump_json())
+## NOT SECURE## passwird must be hased for storing
+def store_in_redis(user: str, user_object: str):
+    r.set(f"user:{user}", user_object)
 
 def get_from_redis(username: str):
     json_data = r.get(f"user:{username}")
@@ -20,8 +22,9 @@ def get_from_redis(username: str):
         return None
     return json.loads(json_data)
 
-def remove_from_redis(username: str, token: str) -> int:
-    r.delete(f"session:{token}")
+def remove_from_redis(username: str, token: Optional[str] = None) -> int:
+    if token != None:
+        r.delete(f"session:{token}")
     return r.delete(f"user:{username}")
 
 # #### TODO redis.conf
@@ -49,7 +52,19 @@ def change_username_redis(email: str, new_username: str):
     r.set(f"user:{email}", json.dumps(user_data))
     return True
 
-### CHANGE USER NAME ###
+### CHANGE PASSWORD ###
+def change_password_redis(email: str, new_psswrd: str):
+    user_data = get_from_redis(email)
+    if user_data is None:
+        return False
+    # Update password
+    user_data['password'] = new_psswrd
+    r.delete(f"user:{email}")
+    # Store updated data under new password key
+    r.set(f"user:{email}", json.dumps(user_data))
+    return True
+
+### CHANGE Verification ###
 def change_password_redis(email: str, new_psswrd: str):
     user_data = get_from_redis(email)
     if user_data is None:

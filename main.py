@@ -1,10 +1,18 @@
-from fastapi import FastAPI
+import re
 import uvicorn
-from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, entrypoints, secured
 import requests
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Request, HTTPException, status
 from fastapi.responses import RedirectResponse
+
+from app.routers import auth, entrypoints, secured
+from app.schemas.user import UrlRequest
 
 origins = [
     "http://localhost:8100/",
@@ -13,8 +21,13 @@ origins = [
     "http://127.0.0.1:8100",
 ]
 
+limiter = Limiter(key_func=get_remote_address, default_limits=["1/minute"])
 app = FastAPI()
 
+# Add Rate Limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 # Arrange CORS settings
 app.add_middleware(
     CORSMiddleware,
@@ -28,16 +41,6 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth")
 app.include_router(entrypoints.router, prefix="/api/v1/entrypoints")   
 app.include_router(secured.router, prefix="/api/v1")
-
-
-### INSECURE DEMO TO CHECK IF A LETTERBOXD URL IS VALID AND EXISTS ###
-@app.get("/fetchletterbopxdurl")
-def redirect_admin(request: Request):
-    response = requests.get("https://letterboxd.com/davebeer/")
-    #file://C:\Windows\System32\drivers\etc\hosts
-    #file://C:\Windows\win.ini
-    #GET http://127.0.0.1:6379 --> blind-SSRF to check the type of server
-    return {"status": "deleted"}
 
 
 
@@ -55,6 +58,12 @@ def redirect_admin(request: Request):
 #             headers={"WWW-Authenticate": "Bearer"},
 #         )
 
-    
+#SECURE: Run application with TLS/SSL
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, ssl_certfile='./ssl_certs/example.com+5.pem', ssl_keyfile="./ssl_certs/./example.com+5-key.pem")
+
+### NOT-SECURE ###
+# 1. A02:2021 – Cryptographic Failures:Run application without TLS/SSL --> no confidentiality and integrity guarantess with the client
+# if __name__ == "__main__":
+#     uvicorn.run("main:app", host="0.0.0.0", port=8000,)
+
