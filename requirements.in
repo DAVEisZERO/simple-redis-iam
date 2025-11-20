@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+requests
+structlog
+slowapi
+asgi_correlation_id
+pytest
+pwdlib[argon2]
+pyotp
+pydantic
+pydantic-settings
+redis
+python-multipart

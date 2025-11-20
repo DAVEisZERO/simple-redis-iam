@@ -1,6 +1,9 @@
 # Packages
 ssl_certs
 
+# Trivy
+trivy_cache/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

@@ -1,13 +1,14 @@
 
 from app.services.redis_service import get_from_redis, remove_from_redis, get_otp_secret, change_username_redis, store_in_redis
 from app.schemas.user import OTPData, AuthUser, User, StoreUser
+from app.config.settings import SETTINGS
 import pytest
 
 def test_create_user():
     user = StoreUser(name="dave", email="sdfdsf@sdf.com", password="123456879", verified=False, id="23123213213123123", role="user")
     store_in_redis(user.name, user.model_dump_json())
-    user2 = StoreUser(name="dave", email="sdfdsf@sdf.com", password="123456879", verified=True, id="23123213213123123", role="user")
-    store_in_redis(user2.name, user2.model_dump_json())
+    # user2 = StoreUser(name="dave", email="sdfdsf@sdf.com", password="123456879", verified=True, id="23123213213123123", role="user")
+    # store_in_redis(user2.name, user2.model_dump_json())
 
 def test_get_user_otp_from_redis():
     object = OTPData(**get_otp_secret("davebeer.dh@gmail.com"))

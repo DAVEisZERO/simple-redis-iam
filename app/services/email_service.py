@@ -3,9 +3,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 
-from dotenv import load_dotenv
-load_dotenv()
-
 # SMTP server Configuration
 SMTP_SERVER = "smtp.gmail.com"  # Replace with your SMTP server
 SMTP_PORT = 587  # Use 465 for SSL or 587 for TLS

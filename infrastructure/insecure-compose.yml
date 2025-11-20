@@ -2,25 +2,26 @@ version: '3.8'
 services:
   iam-redis:
     image: redis:8.4.0
-    ports: # not secure
+    ports:
       - "6379:6379"
     container_name: iam-redis
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     volumes:
       - ./redis-secure.conf:/usr/local/etc/redis/redis.conf
       - redis_data:/data
-    # No "ports" section here! Keep it internal to the Docker network.
     networks:
       - iam-network
 
-  # iam-fastapi:
-  #   build: .
-  #   environment:
-  #     - REDIS_HOST=iam-redis
-  #     - REDIS_PORT=6379
-  #     - REDIS_PASSWORD=${REDIS_PASSWORD}
-  #   networks:
-  #     - iam-network
+  iam-fastapi:
+    build: .
+    environment:
+      - REDIS_HOST=iam-redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=Replace_This_With_A_Super_Long_Random_String_Or_Env_Var
+    networks:
+      - iam-network
+    ports:
+          - "8000:8000"
 
 volumes:
   redis_data:
