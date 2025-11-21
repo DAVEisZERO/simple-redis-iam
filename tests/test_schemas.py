@@ -1,6 +1,6 @@
 import pytest
 import json
-from app.schemas.user import User, Token
+from app.schemas.user import User
 
 
 def test_user_round_trip_serialization():

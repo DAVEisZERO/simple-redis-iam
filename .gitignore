@@ -1,8 +1,9 @@
-# Packages
-ssl_certs
+# cert
+example.com+5*
 
 # Trivy
 trivy_cache/
+not_used/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -141,7 +142,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .envrc
 .venv
 env/

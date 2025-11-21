@@ -1,10 +1,49 @@
 
 import json
+
 from typing import Optional
 
 import redis
 
 from app.config.settings import SETTINGS
+
+"""
+################################################################################
+###                                   DOCS                                   ###
+################################################################################
+
+Redis Service Module
+Handles user data storage and session management using Redis.
+Functions:
+    find_in_redis(type: str, username: str) -> bool:
+        Checks if a user of a specific type exists in Redis.
+    store_in_redis(user: str, user_object: str):
+        Stores user data in Redis.
+    get_from_redis(username: str):
+        Retrieves user data from Redis.
+    remove_from_redis(username: str, token: Optional[str] = None) -> int:
+        Removes user data and optionally a session token from Redis.
+    store_session_redis(username: str, token: str):
+        Stores a user session in Redis with an expiration time.
+    get_session_redis(token: str):
+        Retrieves a user session from Redis.
+    change_username_redis(email: str, new_username: str) -> bool:
+        Updates a user's username in Redis.
+    change_password_redis(email: str, new_psswrd: str) -> bool:
+        Updates a user's password in Redis.
+    store_otp_secret(id: str, secret_object: str):
+        Stores an OTP secret in Redis with a short expiration time.
+    get_otp_secret(id: str) -> any:
+        Retrieves an OTP secret from Redis.
+    remove_otp_from_redis(id: str) -> int:
+        Removes an OTP secret from Redis.
+        
+    [INSECURE]
+    store_session_redis_insecure(username: str, token: str):
+        Stores a user session in Redis without expiration, leading to potential session fixation.
+    store_otp_secret_insecure(id: str, secret_object: str):
+        Stores an OTP secret in Redis without expiration, leading to potential security risks.
+"""
 
 # Read password from environment variable
 redis_pass = SETTINGS.redis_password.get_secret_value()
@@ -80,11 +119,6 @@ def change_password_redis(email: str, new_psswrd: str):
     r.set(f"user:{email}", json.dumps(user_data))
     return True
 
-#### SECURE ####
-
-def check_user_in_redis(username: str) -> bool:
-    return r.exists(f"user:{username}") == 1
-
 ### otp secret storage ###
 def store_otp_secret(id: str, secret_object: str):
     r.set(f"otp_secret:{id}", secret_object, ex=300)  # OTP secret expires in 5 minutes
@@ -95,6 +129,8 @@ def get_otp_secret(id: str) -> any:
         return None
     return json.loads(json_data)
 
+def remove_otp_from_redis(id: str) -> int:
+    return r.delete(f"otp_secret:{id}")
 ########################################################################################################################################
 ###                                                      INSECURE CODE                                                               ###
 ########################################################################################################################################

@@ -9,7 +9,7 @@ def test_send_confirmation_email():
 
 
 def test_send_password_reset_email():
-    print(reset_password_email(to_email="davebeer.dh@gmail.com", subject="Reset your password"))
+    print(reset_password_email(to_email="davebeer.dh@gmail.com", subject="Reset your password", redirect_url="http://localhost:8100/"))
 
 
 def test_validate_auth_code():
