@@ -13,7 +13,7 @@ from fastapi import Request, HTTPException, status
 from fastapi.responses import RedirectResponse
 
 from app.routers import auth, entrypoints, secured
-from app.schemas.user import UrlRequest
+from app.schemas.simple_requests import UrlRequest
 from app.config.settings import SETTINGS
 
 origins = SETTINGS.allowed_origins

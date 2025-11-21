@@ -1,6 +1,6 @@
 import pytest
 import json
-from app.schemas.user import User, Token
+from app.schemas.user import User
 from app.logging.confg_logging import LOGGER    
 
 

@@ -1,43 +1,49 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import os
 
-# SMTP server Configuration
-SMTP_SERVER = "smtp.gmail.com"  # Replace with your SMTP server
-SMTP_PORT = 587  # Use 465 for SSL or 587 for TLS
-USERNAME = "u7151758461@gmail.com"  # Your email login
-PASSWORD = "fpzo rcfl lido cgzb"  # Your APP Password
+from app.config.settings import SETTINGS
 
-# Email Details
-sender_email = USERNAME
-receiver_email = "davebeer.dh@gmail.com"
-subject = "Test Email from Python"
+"""
+################################################################################
+###                                   DOCS                                   ###
+################################################################################
 
-# email_html_body = """<h2>Confirm your signup</h2>
-# <p>Follow this link to confirm your user:</p>
-# <p><a href="{{ .ConfirmationURL }}">Confirm your mail</a></p>"""
+Email Service Module
+------------------
+Handles email delivery using SMTP with secure TLS connections. Supports sending
+HTML-formatted emails with proper MIME structure and error handling.
+
+Configuration:
+    SETTINGS.smtp_server: SMTP server hostname from environment settings.
+    SETTINGS.smtp_port: SMTP server port from environment settings.
+    SETTINGS.smtp_username: SMTP authentication username from environment settings.
+    SETTINGS.smtp_password: SMTP authentication password from environment settings.
+
+Functions:
+    send_mail: Sends an HTML email to a recipient via SMTP with TLS encryption.
+        Input: html_body (str), receiver_email (str), subject (str)
+        Returns: bool (True on success, False or None on failure)
+        Raises: Logs exceptions to console on SMTP connection or authentication errors.
+
+################################################################################
+"""
 
 
-def send_mail(html_body: str, receiver_email: str = receiver_email, subject: str = subject):
+def send_mail(html_body: str, receiver_email: str, subject: str):
     try:
         # Create the email
         msg = MIMEMultipart()
-        msg["Form"] = sender_email
+        msg["Form"] = SETTINGS.smtp_username
         msg["To"] = receiver_email
         msg["Subject"] = subject
         msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
         # Send the email
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        with smtplib.SMTP(SETTINGS.smtp_server, SETTINGS.smtp_port) as server:
             server.starttls()  # Secure connection
-            server.login(USERNAME, PASSWORD)
-            server.sendmail(sender_email, receiver_email, msg.as_string())
+            server.login(SETTINGS.smtp_username, SETTINGS.smtp_password.get_secret_value())
+            server.sendmail(SETTINGS.smtp_username, receiver_email, msg.as_string())
         return True
     except Exception as e:
         print(f"error : {e}")
-
-
-
-# send_mail(email_html_body)
-

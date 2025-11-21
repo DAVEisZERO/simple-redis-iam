@@ -1,19 +1,48 @@
-from typing import Union, Annotated
-import urllib.parse
-import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, status, HTTPException, Request
-from fastapi.responses import RedirectResponse
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from app.services.redis_service import store_in_redis, get_from_redis, remove_from_redis, get_session_redis, store_session_redis, find_in_redis
-from app.services.oauth2_opaque_token import OAUTH2_SCHEME, generate_opaque_token, verify_password
+from app.services.redis_service import get_from_redis,store_session_redis
+from app.services.oauth2_opaque_token import generate_opaque_token, verify_password
 from app.logging.confg_logging import LOGGER
-from app.services.confirmation_service import authentication_email, validate_auth_code, reset_password_email
-from app.schemas.user import User, AuthUser, UserSession,EmailRequest
-from app.utils.utils import create_user_id
+from app.schemas.user import AuthUser, UserSession
+
+"""
+################################################################################
+###                                   DOCS                                   ###
+################################################################################
+
+Authentication Router Module
+------------------
+Handles user login and session management with OAuth2 token-based authentication.
+Implements rate limiting, comprehensive logging, and password verification using
+secure Argon2 hashing. Provides both secure and insecure endpoints for
+demonstration purposes.
+
+Configuration:
+    limiter: SlowAPI rate limiter configured to 5 requests per minute on login
+    LOGGER: Structured logging for authentication events and security monitoring
+    OAUTH2_SCHEME: FastAPI OAuth2PasswordBearer for token extraction
+
+Functions:
+    login: [SECURE] Authenticates user with credentials and generates session token.
+        Input: request (Request), form_data (OAuth2PasswordRequestForm)
+        Returns: UserSession with opaque token and user information
+        Security: Rate limited (5/min), password hashing verification, comprehensive logging
+        Logging: Captures login attempts, failures, and token generation with IP tracking
+        
+    loginInsecure: [INSECURE] Authenticates user with plaintext password comparison.
+        Input: form_data (OAuth2PasswordRequestForm)
+        Returns: UserSession with token and user data
+        Vulnerabilities: No rate limiting, plaintext password storage, no logging,
+                        No input validation, vulnerable to DoS and brute force attacks
+
+################################################################################
+
+"""
 
 # configure rate limit
 limiter = Limiter(key_func=get_remote_address)
@@ -37,7 +66,7 @@ async def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm
             LOGGER.warning("login_failed", user=user.email, ip=client_ip, detaisl="Incorrect password")
             raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Incorrect username or password")
         else:
-            token = generate_opaque_token(user.get("password"))
+            token = generate_opaque_token()
             store_session_redis(form_data.username, token)
             LOGGER.info("login_success", user=user.email, ip=client_ip)
             LOGGER.info("token_generated", user=user.email, ip=client_ip, token=token)
@@ -71,7 +100,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         if not user_psswrd == sent_password: ### raw password are stored and vverified
             raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Incorrect password")
         else:
-            token = generate_opaque_token(user.get("password"))
+            token = generate_opaque_token()
             store_session_redis(form_data.username, token)
             ##TODO: Multiple session tokens can be created for the same user (signup + login problem) --> not secure, too much token
     

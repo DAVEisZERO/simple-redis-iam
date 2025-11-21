@@ -1,15 +1,59 @@
-from typing import Annotated
-import requests
 import re
+import requests 
+from typing import Annotated
 
-from fastapi import  Depends, FastAPI,  HTTPException, status, APIRouter, Depends, status, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import  Depends, HTTPException, status, APIRouter, Depends, status, HTTPException, Request
 
-from app.schemas.user import User, AuthUser, UserSession,  UrlRequest
 from app.logging.confg_logging import LOGGER
-from app.routers import auth
+from app.schemas.user import User, AuthUser, UserSession
+from app.schemas.simple_requests import UrlRequest
 from app.services.redis_service import get_from_redis, remove_from_redis, get_session_redis, change_username_redis, change_password_redis, find_in_redis
 from app.services.oauth2_opaque_token import OAUTH2_SCHEME, hash_password
+
+
+"""
+################################################################################
+###                                   DOCS                                   ###
+################################################################################
+
+Secured Router Module
+------------------
+Handles authenticated user operations including profile management, password
+changes, and secure URL validation. Implements OAuth2 token-based authentication
+with comprehensive logging and error handling.
+
+Configuration:
+    OAUTH2_SCHEME: FastAPI OAuth2PasswordBearer scheme for token extraction
+    LOGGER: Structured logging for security events and user actions
+
+Functions:
+    change_user_name: [SECURE] Updates authenticated user's display name.
+        Input: request (Request), user (AuthUser), token (str via OAuth2)
+        Returns: UserSession with updated user information
+        Security: Validates session token before name update
+        
+    change_user_password: [SECURE] Updates authenticated user's password with hashing.
+        Input: request (Request), user (User), token (str via OAuth2)
+        Returns: UserSession with updated credentials
+        Security: Validates session token and hashes password before storage
+        
+    redirect_admin: [SECURE] Validates and fetches Letterboxd list URLs.
+        Input: request (UrlRequest), token (str via OAuth2)
+        Returns: dict with URL validation status
+        Security: Strict regex pattern validation and User-Agent headers
+        
+    delete_user: [SECURE] Removes authenticated user from system.
+        Input: user (AuthUser), token (str via OAuth2)
+        Returns: dict with deletion confirmation
+        Security: Session validation required before deletion
+        
+    redirect_admin (insecure): [INSECURE] No URL validation, vulnerable to SSRF attacks.
+    
+    delete_user (insecure): [INSECURE] No proper OAuth2 dependency, broken access control.
+
+################################################################################
+"""
+
 
 router = APIRouter(tags=["Authenticated"])
 

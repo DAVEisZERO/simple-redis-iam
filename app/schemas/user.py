@@ -3,6 +3,39 @@ import re
 from typing import Optional
 from datetime import datetime
 
+"""
+################################################################################
+###                                   DOCS                                   ###
+################################################################################
+
+User Schema Module
+------------------
+Defines Pydantic models for user authentication, storage, and API communication.
+Includes validation for passwords with complexity requirements and secure user
+data structures for different contexts.
+
+Classes:
+    AuthUser: Represents authenticated and stored user information.
+        Attributes: id (str), email (str), name (Optional[str]), list (Optional[str]), role (Optional[str])
+        
+    UserSession: Response schema for client session data including tokens.
+        Attributes: provider_token, provider_refresh_token, access_token, refresh_token, 
+                    expires_in, expires_at, token_type, user (AuthUser)
+        
+    StoreUser: User data model for storage with verification status.
+        Attributes: id (Optional[str]), name (str), email (str), password (str), role (str), verified (bool)
+        
+    User: User communication schema with password validation.
+        Attributes: id (Optional[str]), name (str), email (str), password (str)
+        Validators: validate_password (minimum 8 chars, uppercase letter, digit required)
+        
+    InsecureUser: [INSECURE] User model without validation, vulnerable to injection and weak passwords.
+        Attributes: id (Optional[str]), name (str), email (str), password (str), role (default 'user')
+
+################################################################################
+
+"""
+
 ### Authenticated and stored user info ###
 class AuthUser(BaseModel):
     id: str
@@ -22,11 +55,6 @@ class UserSession(BaseModel):
     expires_at: Optional[int] = None
     token_type: str
     user: AuthUser
-
-class OTPData(BaseModel):
-    email: str
-    code: str
-    expires_at: datetime
 
 class StoreUser(BaseModel):
     id: Optional[str] = None
@@ -59,29 +87,21 @@ class User(BaseModel):
         
         return v
 
-class InsecureUser(BaseModel): ### A01:2021 – Broken Access Control ###
+
+########################################################################################################################################
+###                                                      INSECURE CODE                                                               ###
+########################################################################################################################################
+
+### 1. A01:2021 – Broken Access Control: role escalation
+### 2. A07:2021 – Identification and Authentication Failures: no validation. Permits default, weak, or well-known passwords, such as "Password1" or "admin/admin".
+### 3. A03:2021 – Injection: No validation or sanitization of user inputs, leading to potential injection attacks.
+#######################################################################################################################
+class InsecureUser(BaseModel): 
     id: Optional[str] = None
     name: str
     email: str
-    password: str ## A07:2021 – Identification and Authentication Failures: no validation
+    password: str 
     role: Optional[str] = "user"  # default role is 'user'
-
-class EmailRequest(BaseModel):
-    email: str
-
-class UrlRequest(BaseModel):
-    url: str
-
-### NOT IMPLEMENTED YET ###
-class SecuritySettings(BaseModel):
-    otp_configured: bool
-    secret: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
 
 
 

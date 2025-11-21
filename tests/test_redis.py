@@ -1,6 +1,7 @@
 
 from app.services.redis_service import get_from_redis, remove_from_redis, get_otp_secret, change_username_redis, store_in_redis
-from app.schemas.user import OTPData, AuthUser, User, StoreUser
+from app.schemas.user import AuthUser, User, StoreUser
+from app.schemas.token import OTPData
 from app.config.settings import SETTINGS
 import pytest
 
