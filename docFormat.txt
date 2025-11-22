@@ -1,0 +1,24 @@
+"""
+################################################################################
+###                                   DOCS                                   ###
+################################################################################
+
+<NAME OF SERVICE>
+------------------
+<general, complete, consice description>
+
+Configuration:
+    <description>
+
+Classes:
+    <description>
+
+Functions:
+	function1: ....
+		<description>
+		
+	function2: ....
+		<description>
+		
+		...
+"""
