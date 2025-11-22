@@ -126,7 +126,7 @@ def handle_email_verification(
         new_reedirect_to = f"{redirect_to}#{fragment}"
 
         LOGGER.info("auth_success", user=user.email, ip=client_ip)
-        LOGGER.info("token_generated", user=user.email, ip=client_ip, token=token)
+        LOGGER.info("token_generated", user=user.email, ip=client_ip)
         response = RedirectResponse(url=new_reedirect_to, status_code=status.HTTP_308_PERMANENT_REDIRECT)
 
         return response

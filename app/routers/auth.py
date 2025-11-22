@@ -69,7 +69,7 @@ async def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm
             token = generate_opaque_token()
             store_session_redis(form_data.username, token)
             LOGGER.info("login_success", user=user.email, ip=client_ip)
-            LOGGER.info("token_generated", user=user.email, ip=client_ip, token=token)
+            LOGGER.info("token_generated", user=user.email, ip=client_ip)
             auth_user = AuthUser(id=user.id, email=user.email, name=user.name)
             ##TODO: Multiple session tokens can be created for the same user (signup + login problem) --> not secure, too much token
     

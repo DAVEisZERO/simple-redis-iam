@@ -1,6 +1,4 @@
-import re
 import uvicorn
-import requests
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -9,12 +7,53 @@ from asgi_correlation_id import CorrelationIdMiddleware
 from slowapi.errors import RateLimitExceeded
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Request, HTTPException, status
-from fastapi.responses import RedirectResponse
 
 from app.routers import auth, entrypoints, secured
-from app.schemas.simple_requests import UrlRequest
 from app.config.settings import SETTINGS
+
+"""
+################################################################################
+###                                   DOCS                                   ###
+################################################################################
+
+Entrypoints Router Module
+------------------
+Handles user registration, email verification, and password reset flows with
+OAuth2 token-based authentication. Implements rate limiting, comprehensive
+logging, and secure OTP-based verification. Provides both secure and insecure
+endpoints for demonstration purposes.
+
+Configuration:
+    limiter: SlowAPI rate limiter with per-endpoint rate limits
+    LOGGER: Structured logging for authentication events and security monitoring
+
+Functions:
+    store_user: [SECURE] Registers new user with email verification requirement.
+        Input: request (Request), user (User)
+        Returns: StatusRequest with confirmation email status
+        Security: Rate limited (2/day), password hashing, email verification required
+        Logging: Tracks signup attempts, email delivery, and security events
+        
+    handle_email_verification: [SECURE] Validates OTP token and marks user verified.
+        Input: request (Request), token (str), type (str), redirect_to (str)
+        Returns: RedirectResponse with session token in URL fragment
+        Security: Rate limited (3/hour), OTP validation, session token generation
+        Logging: Tracks verification attempts and successful authentications
+        
+    forgot_password: [SECURE] Initiates password reset workflow via email.
+        Input: request (Request), user (EmailRequest)
+        Returns: dict with status message
+        Security: Rate limited (3/hour), user existence validation, OTP generation
+        Logging: Tracks password reset requests and email delivery
+        
+    store_user_insecure: [INSECURE] Registers user without email verification.
+        Input: request (Request), user (InsecureUser)
+        Returns: UserSession with immediate token
+        Vulnerabilities: No rate limiting, no email verification, role escalation possible,
+                        plaintext password storage, no logging, broken access control
+
+################################################################################
+"""
 
 origins = SETTINGS.allowed_origins
 

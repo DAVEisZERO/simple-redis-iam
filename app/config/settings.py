@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     otp_length: int
 
     opaque_token_length: int
+    opaque_token_expire_seconds: int
 
     security_mode: str = "SECURE"  # or "INSECURE"
     allowed_origins: List[str] = []

@@ -75,7 +75,7 @@ def remove_from_redis(username: str, token: Optional[str] = None) -> int:
 
 ### SESSIONS Approach ###
 def store_session_redis(username: str, token: str):
-    r.set(f"session:{token}", username, ex=3600)  # Session expires in 1 hour
+    r.set(f"session:{token}", username, ex=SETTINGS.opaque_token_expire_seconds)  # Session expires in 1 day
 
 def get_session_redis(token: str):
     result = r.get(f"session:{token}")
@@ -90,24 +90,12 @@ def change_username_redis(email: str, new_username: str):
         return False
     # Update username
     user_data['name'] = new_username
-    r.delete(f"user:{email}")
+    #r.delete(f"user:{email}")
     # Store updated data under new username key
     r.set(f"user:{email}", json.dumps(user_data))
     return True
 
 ### CHANGE PASSWORD ###
-def change_password_redis(email: str, new_psswrd: str):
-    user_data = get_from_redis(email)
-    if user_data is None:
-        return False
-    # Update password
-    user_data['password'] = new_psswrd
-    r.delete(f"user:{email}")
-    # Store updated data under new password key
-    r.set(f"user:{email}", json.dumps(user_data))
-    return True
-
-### CHANGE Verification ###
 def change_password_redis(email: str, new_psswrd: str):
     user_data = get_from_redis(email)
     if user_data is None:

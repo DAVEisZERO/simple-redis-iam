@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import  Depends, HTTPException, status, APIRouter, Depends, status, HTTPException, Request
 
 from app.logging.confg_logging import LOGGER
-from app.schemas.user import User, AuthUser, UserSession
+from app.schemas.user import User, AuthUser, UserSession, StoreUser
 from app.schemas.simple_requests import UrlRequest
 from app.services.redis_service import get_from_redis, remove_from_redis, get_session_redis, change_username_redis, change_password_redis, find_in_redis
 from app.services.oauth2_opaque_token import OAUTH2_SCHEME, hash_password
@@ -73,7 +73,7 @@ def change_user_name(request: Request, user: AuthUser, token: Annotated[str, Dep
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    new_user = User(**get_from_redis(username=user_email))
+    new_user = StoreUser(**get_from_redis(username=user_email))
     authuser = AuthUser(id=new_user.id , email=new_user.email, name=new_user.name)
     LOGGER.info("name_change_success", user=user.email, ip=client_ip)
 
