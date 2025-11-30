@@ -1,0 +1,7 @@
+- Add role ADMIN -> with 1/2 fucntions for redis DB management. E.g delete/clean db data, clean all tokens etc.
+- test Injection A03 code. secure.py
+- docuemntation: add local SSL cert process
+- redis insecure CONFIG
+- store token as cookie
+- IAM loging secrets with no anonimization
+- ??? maybe mitigations in Chapter 2.3 need to be referenced based on the CWE or OWASP cheat sheet. ???

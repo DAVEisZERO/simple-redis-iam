@@ -63,7 +63,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(tags=["Entrypoints"])
 
-### ALMOST SECURE ###
+### SECURE ###
 @router.post("/signup/", status_code=status.HTTP_202_ACCEPTED, response_model=StatusRequest)
 @limiter.limit("2/day")
 def store_user(request: Request, user: User):
@@ -169,7 +169,7 @@ def forgot_password(request: Request, user: EmailRequest):
 ### 5. A09:2021 – Security Logging and Monitoring Failures: No logging of critical actions such as login, signup, password changes, etc.
 #######################################################################################################################
 @router.post("/signupInsecure/", status_code=status.HTTP_201_CREATED, response_model=UserSession)
-def store_user(request: Request, user: InsecureUser):
+def store_user_insecure(request: Request, user: InsecureUser):
     if find_in_redis("user", user.email):
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="User already exists")
     

@@ -150,6 +150,7 @@ app_insecure.add_middleware(
     allow_headers=["*"], # # NOT-SECURE: Allow all headers
 )
 
+# make sure to change the https to http endpoint when testing in the frontend code.
 # if __name__ == "__main__":
 #     uvicorn.run("main:app_insecure", host="0.0.0.0", port=8000,)
 

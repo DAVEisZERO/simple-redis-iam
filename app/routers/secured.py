@@ -5,9 +5,9 @@ from typing import Annotated
 from fastapi import  Depends, HTTPException, status, APIRouter, Depends, status, HTTPException, Request
 
 from app.logging.confg_logging import LOGGER
-from app.schemas.user import User, AuthUser, UserSession, StoreUser
+from app.schemas.user import User, AuthUser, UserSession, StoreUser, InsecureUser
 from app.schemas.simple_requests import UrlRequest
-from app.services.redis_service import get_from_redis, remove_from_redis, get_session_redis, change_username_redis, change_password_redis, find_in_redis
+from app.services.redis_service import get_from_redis, remove_from_redis, get_session_redis, change_username_redis, change_password_redis, find_in_redis, insecure_redis_set_user
 from app.services.oauth2_opaque_token import OAUTH2_SCHEME, hash_password
 
 
@@ -191,14 +191,32 @@ def redirect_admin(request: UrlRequest,token: Annotated[str, Depends(OAUTH2_SCHE
         raise HTTPException(status_code=check_response.status_code, detail="URL is not accessible")
   
 
-### 2. A01:2021 – Broken Access Control: Authenticatino Token not validated & no schema imposure.
+### 1. A01:2021 – Broken Access Control: Authenticatino Token not validated & no schema imposure.
 #######################################################################################################################
 @router.post("/users/remove/", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
-def delete_user(user: AuthUser, token: str):
+def delete_user_insecure(user: AuthUser, token: str):
     
     if find_in_redis() != False:
         remove_from_redis(username=user.email, token=token)
         return {"Status": user.email + " deleted"}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+### 1. A01:2021 – Broken Access Control: Authenticatino Token not validated & no schema imposure.
+### 2. A03:2021 – Injection: Redis command is constructed dynamically, leading to potential injection attacks.
+#######################################################################################################################
+@router.post("/admin/createUserInsecure/", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
+def create_user_insecure(user: InsecureUser, token: str):
+    result = get_session_redis(token)
+        
+    if result != None:
+        if get_from_redis(user.email).get("role") == "admin":
+            insecure_redis_set_user(user.email, user.password)
+            return {"Status": f"Insecure user {user.email} created with role {user.role}"}
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

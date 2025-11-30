@@ -43,6 +43,8 @@ Functions:
         Stores a user session in Redis without expiration, leading to potential session fixation.
     store_otp_secret_insecure(id: str, secret_object: str):
         Stores an OTP secret in Redis without expiration, leading to potential security risks.
+    insecure_redis_set_user(command: str, key: str, value: str):
+        Constructs Redis commands dynamically, leading to potential injection attacks.
 """
 
 # Read password from environment variable
@@ -65,7 +67,7 @@ def store_in_redis(user: str, user_object: str):
 def get_from_redis(username: str):
     json_data = r.get(f"user:{username}")
     if json_data is None:
-        return None
+        return None 
     return json.loads(json_data)
 
 def remove_from_redis(username: str, token: Optional[str] = None) -> int:
@@ -73,7 +75,7 @@ def remove_from_redis(username: str, token: Optional[str] = None) -> int:
         r.delete(f"session:{token}")
     return r.delete(f"user:{username}")
 
-### SESSIONS Approach ###
+### SECURE SESSIONS Approach ###
 def store_session_redis(username: str, token: str):
     r.set(f"session:{token}", username, ex=SETTINGS.opaque_token_expire_seconds)  # Session expires in 1 day
 
@@ -107,7 +109,7 @@ def change_password_redis(email: str, new_psswrd: str):
     r.set(f"user:{email}", json.dumps(user_data))
     return True
 
-### otp secret storage ###
+### SECURE ###
 def store_otp_secret(id: str, secret_object: str):
     r.set(f"otp_secret:{id}", secret_object, ex=300)  # OTP secret expires in 5 minutes
 
@@ -130,6 +132,14 @@ def store_session_redis_insecure(username: str, token: str):
 
 def store_otp_secret_insecure(id: str, secret_object: str):
     r.set(f"otp_secret:{id}", secret_object)
+
+### 3.4	A03:2021 – Injection: Redis command is constructed dynamically, leading to potential injection attacks.
+#######################################################################################################################
+def insecure_redis_set_user( key: str, value: str):
+    # WARNING: This function is insecure and for demonstration purposes only.
+    # It constructs Redis commands dynamically, which can lead to injection attacks.
+    full_command = f"SET {key} {value}"
+    return r.execute_command(full_command)
 
 ### 2. A02:2021 – Cryptographic Failures:  Hardcoding password/keys in the code
 #######################################################################################################################

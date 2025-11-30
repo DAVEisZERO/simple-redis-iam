@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     smtp_server: str
     smtp_port: int
     smtp_username: str
-    smtp_password: SecretStr
+    smtp_password: SecretStr # SECURE: OWASP A09
 
     otp_expire_minutes: int
     otp_length: int
