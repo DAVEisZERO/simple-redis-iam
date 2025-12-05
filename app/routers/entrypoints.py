@@ -111,7 +111,7 @@ def handle_email_verification(
         # Mark user as identidy verified
         user = StoreUser(**get_from_redis(username=validated_obj.email))
         user.verified = True
-        store_in_redis(user.name, user.model_dump_json())
+        store_in_redis(user.email, user.model_dump_json())
         # Log in the user by creating a session token
         token = generate_opaque_token()
         store_session_redis(validated_obj.email, token)

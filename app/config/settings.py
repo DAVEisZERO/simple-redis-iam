@@ -24,7 +24,8 @@ ENV_PATH = THIS_DIR.parent.parent / ".env"
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_PATH , env_file_encoding="utf-8", extra="ignore")
     
-    redis_password: SecretStr
+    redis_password: SecretStr # SECURE: OWASP A09
+    redis_password_insecure: str  # INSECURE: for testing only
     redis_username: str
     redis_host: str
     redis_port: int
@@ -44,4 +45,7 @@ class Settings(BaseSettings):
     allowed_origins: List[str] = []
     redirect_url: str
 
+    ssl_certfile: str
+    ssl_keyfile: str
+    
 SETTINGS = Settings()

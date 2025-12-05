@@ -18,11 +18,37 @@ The principal goal of this project is to demonstrate good and bad code implement
 
 ### 📦 Prerequisites
 
-- Update the `.env` file with your desired configuration changes
-- Provide the local/remote URL of your deployed frontend
-- Ensure you have `Docker/Podman` and `Python 3.13` installed
+1. Update the `.env` file with your desired configuration changes. (default settings work without problems)
+    - Provide the local/remote URL of your deployed frontend
+2. Ensure you have `Docker/Podman` and `Python 3.13` installed
+3. Set up SSL certificates fo local deployment
 
-> ⚠️ **Note:** Most importantly is the Frontend URL—provide the local/remote URL of your deployed frontend.
+Local CA creation
+
+    install mkcert (https://github.com/FiloSottile/mkcert)
+    
+    # Created a new local CA 💥
+    1. mkcert -install
+    
+    #Created a new certificate valid for the following names 📜
+    # 	- "example.com"
+    # 	- "*.example.com"
+    # 	- "example.test"
+    # 	- "localhost"
+    # 	- "127.0.0.1"
+    # 	- "::1"
+    #    The certificate is at "./example.com+5.pem" and the key at "./example.com+5-key.pem"
+    
+    2. mkcert example.com "*.example.com" example.test localhost 127.0.0.1 ::1
+    
+    3. save at 'simple-redis-aim/ssl_certs' both certificates (public cert and private key)
+    
+    4. based on the names, configure the .env file
+        - more details on uvicorn set-up https://uvicorn.dev/deployment/#running-with-https
+
+    
+> Alternative, use Lets Encrypt for global solution. Set up is more complex.
+    - https://letsencrypt.org/getting-started/
 
 ### 🔧 Build and Deploy
 
@@ -117,7 +143,7 @@ python main.py
 
 ```bash
 podman pull redis:latest
-podman run -d -p 6379:6379 --name redis_IAM redis
+podman run -v ./infrastructure/config:/usr/local/etc/redis -p 6379:6379 --name secure_redis_iam redis redis-server /usr/local/etc/redis/redis_insecure.conf
 ```
 
 ### FastAPI Server Setup

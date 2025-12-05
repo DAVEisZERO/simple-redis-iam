@@ -49,6 +49,7 @@ Functions:
 
 # Read password from environment variable
 redis_pass = SETTINGS.redis_password.get_secret_value()
+print(f"Using SECURE Redis password from environment variable: {SETTINGS.redis_password}")
 
 r = redis.Redis( # speakes RESP (REdis Serialization Protocol)
     host=SETTINGS.redis_host, 
@@ -124,6 +125,10 @@ def remove_otp_from_redis(id: str) -> int:
 ########################################################################################################################################
 ###                                                      INSECURE CODE                                                               ###
 ########################################################################################################################################
+if SETTINGS.security_mode == "INSECURE":
+    ### 1. A09:2021 - Security Logging and Monitoring Failures: Avoid logging sensitive information such as passwords. ###
+    print("Not using IN-SECURE Redis password from environment variabl: " + SETTINGS.redis_password_insecure)
+    ###
 
 ### 1. A07:2021 – Identification and Authentication Failures: no expiration time for sessions (TTL), leading to session fixation.
 #######################################################################################################################
