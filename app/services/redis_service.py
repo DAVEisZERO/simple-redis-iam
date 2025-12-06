@@ -49,7 +49,7 @@ Functions:
 
 # Read password from environment variable
 redis_pass = SETTINGS.redis_password.get_secret_value()
-print(f"Using SECURE Redis password from environment variable: {SETTINGS.redis_password}")
+print(f"Using SECURE Redis password from environment variable: {SETTINGS.redis_password}") # since its a special SecretStr type, secrete will be obfuscated in logs (A09:2021)
 
 r = redis.Redis( # speakes RESP (REdis Serialization Protocol)
     host=SETTINGS.redis_host, 
@@ -76,7 +76,7 @@ def remove_from_redis(username: str, token: Optional[str] = None) -> int:
         r.delete(f"session:{token}")
     return r.delete(f"user:{username}")
 
-### SECURE SESSIONS Approach ###
+### SECURE: TTL added to he session tokens created. (A07:2021)  ###
 def store_session_redis(username: str, token: str):
     r.set(f"session:{token}", username, ex=SETTINGS.opaque_token_expire_seconds)  # Session expires in 1 day
 
@@ -110,7 +110,7 @@ def change_password_redis(email: str, new_psswrd: str):
     r.set(f"user:{email}", json.dumps(user_data))
     return True
 
-### SECURE ###
+### SECURE: TTL added to he OTPs created. (A07:2021) ###
 def store_otp_secret(id: str, secret_object: str):
     r.set(f"otp_secret:{id}", secret_object, ex=300)  # OTP secret expires in 5 minutes
 
@@ -125,12 +125,13 @@ def remove_otp_from_redis(id: str) -> int:
 ########################################################################################################################################
 ###                                                      INSECURE CODE                                                               ###
 ########################################################################################################################################
-if SETTINGS.security_mode == "INSECURE":
-    ### 1. A09:2021 - Security Logging and Monitoring Failures: Avoid logging sensitive information such as passwords. ###
-    print("Not using IN-SECURE Redis password from environment variabl: " + SETTINGS.redis_password_insecure)
-    ###
 
-### 1. A07:2021 – Identification and Authentication Failures: no expiration time for sessions (TTL), leading to session fixation.
+### 1. A09:2021 - Security Logging and Monitoring Failures: Avoid logging sensitive information such as passwords/keys. ###
+if SETTINGS.security_mode == "INSECURE":
+    print("Not using IN-SECURE Redis password from environment variabl: " + SETTINGS.redis_password_insecure)
+##########################################################################################################################
+
+### 1. A07:2021 – Identification and Authentication Failures: no expiration time for sessions & OTPs (TTL), leading to session fixation.
 #######################################################################################################################
 def store_session_redis_insecure(username: str, token: str):
     r.set(f"session:{token}", username) 

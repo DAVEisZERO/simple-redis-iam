@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 import re
 from typing import Optional
 from datetime import datetime
@@ -65,10 +65,10 @@ class StoreUser(BaseModel):
     verified: Optional[bool] = False
 ### COMMUNICATION SCHEMAS ###
 
-class User(BaseModel):
+class User(BaseModel): # User schema with fields validation (A01;2021, A03:2021), role atribute removed for frontend interface/communication
     id: Optional[str] = None
-    name: str
-    email: str
+    name: str = Field(pattern=r"^[A-Z][a-zA-Z\s\-\']*$")
+    email: str = Field(pattern=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
     password: str
     #letterboxd: str
 

@@ -8,7 +8,7 @@ from slowapi.errors import RateLimitExceeded
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, entrypoints, secured
+from app.routers import auth, entrypoints, secured, admin
 from app.config.settings import SETTINGS
 
 """
@@ -16,41 +16,32 @@ from app.config.settings import SETTINGS
 ###                                   DOCS                                   ###
 ################################################################################
 
-Entrypoints Router Module
+Module: main.py
 ------------------
-Handles user registration, email verification, and password reset flows with
-OAuth2 token-based authentication. Implements rate limiting, comprehensive
-logging, and secure OTP-based verification. Provides both secure and insecure
-endpoints for demonstration purposes.
+Purpose:
+    FastAPI application entrypoint for the Simple-Redis-IAM project.
+    - Configures two FastAPI app instances:
+        1) app        : secure defaults (rate limiting, CSP, CORS whitelist, TLS)
+        2) app_insecure: intentionally insecure configuration for demonstration
+    - Registers routers for auth, entrypoints, admin and secured endpoints.
+    - Adds middleware:
+        - SlowAPI limiter for rate limiting
+        - CorrelationIdMiddleware for request correlation IDs
+        - CSP and X-Content-Type-Options headers via an HTTP middleware
+        - CORS middleware (whitelist applied to the secure app)
+    - Starts uvicorn with TLS using certificate paths from SETTINGS when run
+      as a script.
 
-Configuration:
-    limiter: SlowAPI rate limiter with per-endpoint rate limits
-    LOGGER: Structured logging for authentication events and security monitoring
-
-Functions:
-    store_user: [SECURE] Registers new user with email verification requirement.
-        Input: request (Request), user (User)
-        Returns: StatusRequest with confirmation email status
-        Security: Rate limited (2/day), password hashing, email verification required
-        Logging: Tracks signup attempts, email delivery, and security events
-        
-    handle_email_verification: [SECURE] Validates OTP token and marks user verified.
-        Input: request (Request), token (str), type (str), redirect_to (str)
-        Returns: RedirectResponse with session token in URL fragment
-        Security: Rate limited (3/hour), OTP validation, session token generation
-        Logging: Tracks verification attempts and successful authentications
-        
-    forgot_password: [SECURE] Initiates password reset workflow via email.
-        Input: request (Request), user (EmailRequest)
-        Returns: dict with status message
-        Security: Rate limited (3/hour), user existence validation, OTP generation
-        Logging: Tracks password reset requests and email delivery
-        
-    store_user_insecure: [INSECURE] Registers user without email verification.
-        Input: request (Request), user (InsecureUser)
-        Returns: UserSession with immediate token
-        Vulnerabilities: No rate limiting, no email verification, role escalation possible,
-                        plaintext password storage, no logging, broken access control
+Notes:
+    - Keep secure app configuration as the default. The insecure app is included
+      intentionally to demonstrate common OWASP mistakes (enabled docs, debug,
+      permissive CORS, no rate limiting, and no TLS). The insecure app is NOT
+      intended for production use.
+    - The uvicorn call at the bottom launches the secure app with SSL certs
+      from SETTINGS.ssl_certfile and SETTINGS.ssl_keyfile.
+    - Do not change runtime behavior in this file unless you understand the
+      security implications. If you need to enable the insecure app for testing,
+      modify the guarded uvicorn startup accordingly (currently commented).
 
 ################################################################################
 """
@@ -108,8 +99,9 @@ async def add_content_security_policy(request: Request, call_next):
 app.include_router(auth.router, prefix="/api/v1/auth")
 app.include_router(entrypoints.router, prefix="/api/v1/entrypoints")   
 app.include_router(secured.router, prefix="/api/v1")
-app.include_router(auth.router, prefix="/api/v1/auth")
+app.include_router(admin.router, prefix="/api/v1/admin")
 
+# Run the application with SSL/TLS (A02:2021)
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, ssl_certfile=SETTINGS.ssl_certfile, ssl_keyfile=SETTINGS.ssl_keyfile)
 
@@ -151,11 +143,11 @@ app_insecure.add_middleware(
     allow_headers=["*"], # # NOT-SECURE: Allow all headers
 )
 
-app.include_router(auth.router, prefix="/api/v1/auth")
-app.include_router(entrypoints.router, prefix="/api/v1/entrypoints")   
-app.include_router(secured.router, prefix="/api/v1")
+app_insecure.include_router(auth.router, prefix="/api/v1/auth")
+app_insecure.include_router(entrypoints.router, prefix="/api/v1/entrypoints")   
+app_insecure.include_router(secured.router, prefix="/api/v1")
+app_insecure.include_router(admin.router, prefix="/api/v1/admin")
 
 # make sure to change the https to http endpoint when testing in the frontend code.
 # if __name__ == "__main__":
 #     uvicorn.run("main:app_insecure", host="0.0.0.0", port=8000,)
-

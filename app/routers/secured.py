@@ -110,9 +110,10 @@ def change_user_password(request: Request, user: User, token: Annotated[str, Dep
     )
 
 @router.post("/fetchsecure/")
-def redirect_admin(request: UrlRequest, token: Annotated[str, Depends(OAUTH2_SCHEME)]):
+def redirect_admin(request: Request, url_obj: UrlRequest, token: Annotated[str, Depends(OAUTH2_SCHEME)]):
     user_email = get_session_redis(token)
-    #print("result:", user_email)
+    client_ip = request.client.host if request.client else "unknown"
+    LOGGER.info("validate_list_requested", user=user_email, ip=client_ip)
 
     if user_email == None:                  
         raise HTTPException(
@@ -121,9 +122,9 @@ def redirect_admin(request: UrlRequest, token: Annotated[str, Depends(OAUTH2_SCH
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    pattern = r"^https://letterboxd\.com/([^/]+)/list/([^/]+)/?$"
+    pattern = r"^https://letterboxd\.com/([^/]+)/list/([^/]+)/?$" # Strict regex pattern for Letterboxd list URLs (A10:2021)
 
-    target_url = request.url
+    target_url = url_obj.url
     print("Checking URL: " + target_url)
     # 2. INSPECT THE URL
     if not re.match(pattern, target_url):
@@ -136,41 +137,32 @@ def redirect_admin(request: UrlRequest, token: Annotated[str, Depends(OAUTH2_SCH
     
     # 4. CHECK RESPONSE STATUS
     if check_response.status_code == 200:
+        LOGGER.info("validate_list_success", user=user_email, ip=client_ip)
         return {
             "status": True, 
             "url": target_url  # The HTML content
         }
+        
     elif check_response.status_code == 404:
+        LOGGER.warning("validate_list_failed", user=user_email, ip=client_ip)    
         raise HTTPException(status_code=check_response.status_code, detail="List not found in Letterboxd.")
         
     else:
+        LOGGER.warning("validate_list_failed", user=user_email, ip=client_ip) 
         raise HTTPException(status_code=check_response.status_code, detail="URL is not accessible")
 
-
-### SECURE ###
-@router.post("/users/remove/", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
-def delete_user(user: AuthUser, token: Annotated[str, Depends(OAUTH2_SCHEME)]):
-    result = get_session_redis(token)
-    
-    if result != None:
-        remove_from_redis(username=user.email, token=token)
-        return {"Status": user.email + " deleted"}
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     
 ########################################################################################################################################
 ###                                                      INSECURE CODE                                                               ###
 ########################################################################################################################################
 
-### 1. A10:2021 – Server-Side Request Forgery (SSRF): user able to fetch critical data --> NO VALIDATION OF URL FORMAT
+### 1. A10:2021 – Server-Side Request Forgery (SSRF): user able to fetch critical information --> NO VALIDATION OF URL FORMAT
 #######################################################################################################################
 @router.post("/fetchinsecure/")
-def redirect_admin(request: UrlRequest,token: Annotated[str, Depends(OAUTH2_SCHEME)]):
+def redirect_admin(request: Request, url_obj: UrlRequest,token: Annotated[str, Depends(OAUTH2_SCHEME)]):
     user_email = get_session_redis(token)
+    client_ip = request.client.host if request.client else "unknown"
+    LOGGER.info("validate_list_requested", user=user_email, ip=client_ip)
 
     if user_email == None:
         raise HTTPException(
@@ -179,47 +171,35 @@ def redirect_admin(request: UrlRequest,token: Annotated[str, Depends(OAUTH2_SCHE
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    url = request.url
+    url = url_obj.url
     print("Checking URL: " + url)
-    check_response = requests.get(url)
-    #file://C:\Windows\System32\drivers\etc\hosts
-    #file://C:\Windows\win.ini
-    #GET http://127.0.0.1:6379 --> blind-SSRF to check the type of server
+    check_response = requests.get(url)  #GET http://127.0.0.1:6379 --> blind-SSRF to check the backend stack 
     if check_response.status_code == 200:
-        return {"status": "valid", "url": url}
+        return {
+            "status": True, 
+            "response": check_response.request # The HTML content
+        }
     else:
         raise HTTPException(status_code=check_response.status_code, detail="URL is not accessible")
   
-
 ### 1. A01:2021 – Broken Access Control: Authenticatino Token not validated & no schema imposure.
 #######################################################################################################################
-@router.post("/users/remove/", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
-def delete_user_insecure(user: AuthUser, token: str):
+@router.post("/changeNameInsecure/", status_code=status.HTTP_202_ACCEPTED)
+def change_user_name(request: Request, user: InsecureUser,):
+    client_ip = request.client.host if request.client else "unknown"
+    LOGGER.info("name_change_requested", user=user.email, ip=client_ip)
+
+    if find_in_redis("user", user.email):
+        change_username_redis(email=user.email, new_username=user.name)
+    else:             
+        LOGGER.warning("name_change_failed", user=user.email, ip=client_ip)         
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
-    if find_in_redis() != False:
-        remove_from_redis(username=user.email, token=token)
-        return {"Status": user.email + " deleted"}
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    new_user = StoreUser(**get_from_redis(username=user.email))
+    LOGGER.info("name_change_success", user=user.email, ip=client_ip)
 
-### 1. A01:2021 – Broken Access Control: Authenticatino Token not validated & no schema imposure.
-### 2. A03:2021 – Injection: Redis command is constructed dynamically, leading to potential injection attacks.
-#######################################################################################################################
-@router.post("/admin/createUserInsecure/", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
-def create_user_insecure(user: InsecureUser, token: str):
-    result = get_session_redis(token)
-        
-    if result != None:
-        if get_from_redis(user.email).get("role") == "admin":
-            insecure_redis_set_user(user.email, user.password)
-            return {"Status": f"Insecure user {user.email} created with role {user.role}"}
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    return {"Status": f"User name changed to {user.name} for user {user.email}"}

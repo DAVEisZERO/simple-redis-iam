@@ -45,7 +45,7 @@ def generate_opaque_token(length=SETTINGS.opaque_token_length) -> str:
     token= password_hash.hash(password=secrets.token_urlsafe(length)).split('$')[-1]
     return token
 
-### SECURE: Argon2i HASH TO STORE PASSWORD ###
+### SECURE: Argon2i HASH TO STORE PASSWORD (A02:2021) ###
 def hash_password(password: str):
     # hashed_password = password_hash.hash(password)
     return password_hash.hash(password)

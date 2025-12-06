@@ -50,14 +50,15 @@ limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(tags=["Authentication"])
 
 @router.post("/login/", status_code=status.HTTP_202_ACCEPTED, response_model=UserSession)
-@limiter.limit("5/minute")
+@limiter.limit("5/minute") # Rate limiting to 5 requests per minute (A04:2021)
 async def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     user = StoreUser(**get_from_redis(username=form_data.username))
     client_ip = request.client.host if request.client else "unknown"
+    LOGGER.info("login_requested", user=user.email, ip=client_ip)   #Loggin of important transactions (A09:2021)
 
     if user == None:
-        LOGGER.warning("login_failed", user=user.email, ip=client_ip, detaisl="Incorrect username")
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Incorrect username or password")
+        LOGGER.warning("login_failed", user=user.email, ip=client_ip, detaisl="Incorrect username") #Loggin of important transactions (A09:2021)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Incorrect username or password") # too general information is given for more security (A04:2021)
     else: 
         user_psswrd = user.password
         sent_password = form_data.password
@@ -84,7 +85,7 @@ async def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm
 ########################################################################################################################################
 
 ###  1. A02:2021 – Cryptographic Failures: check hashed password
-###  2. A04:2021 – Insecure Design: security before userfriendlyness. Not a good idea to make the endpoint "transparent" to outsiders.
+###  2. A04:2021 – Insecure Design: security before userfriendlyness. Not a good idea to give too many details on login failures.
 ###  3.A04:2021 – Insecure Design: No Rate Limiting the critical endpoint from external requests. Vulnerable to DoS and brute force attacks.
 ###  4. A09:2021 – Security Logging and Monitoring Failures: No logging of critical actions such as login, signup, password changes, etc.
 #######################################################################################################################

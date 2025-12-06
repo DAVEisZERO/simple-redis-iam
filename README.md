@@ -92,7 +92,7 @@ podman run --rm -v trivy_cache:/root/.cache/ aquasec/trivy image redis:latest
 #### Step 5: Deploy Redis Container with Security Config
 
 ```bash
-podman run -v ./infrastructure/config:/usr/local/etc/redis -p 6379:6379 --name secure_redis_iam redis redis-server /usr/local/etc/redis/redis.conf
+podman run -v ./infrastructure/config:/usr/local/etc/redis -p 6300:6300 --name secure_redis_iam redis redis-server /usr/local/etc/redis/redis.conf
 ```
 
 ### 2️⃣ FastAPI Server Setup
@@ -149,7 +149,7 @@ podman run -v ./infrastructure/config:/usr/local/etc/redis -p 6379:6379 --name s
 ### FastAPI Server Setup
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.in
 python main.py
 ```
 

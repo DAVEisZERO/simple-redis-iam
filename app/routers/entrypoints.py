@@ -66,7 +66,7 @@ router = APIRouter(tags=["Entrypoints"])
 ### SECURE ###
 @router.post("/signup/", status_code=status.HTTP_202_ACCEPTED, response_model=StatusRequest)
 @limiter.limit("2/day")
-def store_user(request: Request, user: User):
+def store_user(request: Request, user: User): # uses secure User schema, cant be used to escalate role (A01:2021)
     client_ip = request.client.host if request.client else "unknown"
     LOGGER.info("auth_request", user=user.email, ip=client_ip)
 
@@ -174,12 +174,12 @@ def store_user_insecure(request: Request, user: InsecureUser):
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="User already exists")
     
     user.id = create_user_id()
-    store_in_redis(user.name, user.model_dump_json())
+    store_in_redis(user.email, user.model_dump_json())
 
     # Generate token and store session
     token = generate_opaque_token()
     store_session_redis(user.email, token)
-    authuser = AuthUser(id=user.id , email=user.email, name=user.name)
+    authuser = AuthUser(id=user.id , email=user.email, name=user.name, role=user.role)
 
     return UserSession(
         access_token=token,
